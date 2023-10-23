@@ -73,6 +73,4 @@ class BaichuanPytorchChatModel(PytorchChatModel):
             return False
         if llm_family.model_name not in ["baichuan-chat", "baichuan-2-chat"]:
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return True
+        return "chat" in llm_family.model_ability

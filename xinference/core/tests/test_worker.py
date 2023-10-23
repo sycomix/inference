@@ -85,7 +85,7 @@ async def test_allocate_cuda_devices(setup_pool):
         uid=WorkerActor.uid(),
         supervisor_address="test",
         main_pool=pool,
-        cuda_devices=[i for i in range(8)],
+        cuda_devices=list(range(8)),
     )
 
     devices = await worker.allocate_devices(1)
@@ -131,7 +131,7 @@ async def test_terminate_model_flag(setup_pool):
         uid=WorkerActor.uid(),
         supervisor_address="test",
         main_pool=pool,
-        cuda_devices=[i for i in range(8)],
+        cuda_devices=list(range(8)),
     )
 
     await worker.launch_builtin_model("x1", "x1", None, None, None, n_gpu=1)

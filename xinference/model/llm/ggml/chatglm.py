@@ -104,16 +104,14 @@ class ChatglmCppChatModel(LLM):
             return False
         if "chatglm" not in llm_family.model_name:
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return True
+        return "chat" in llm_family.model_ability
 
     @staticmethod
     def _convert_raw_text_chunks_to_chat(
         tokens: Iterator[str], model_name: str
     ) -> Iterator[ChatCompletionChunk]:
         yield {
-            "id": "chat" + f"cmpl-{str(uuid.uuid4())}",
+            "id": f"chatcmpl-{str(uuid.uuid4())}",
             "model": model_name,
             "object": "chat.completion.chunk",
             "created": int(time.time()),
@@ -129,7 +127,7 @@ class ChatglmCppChatModel(LLM):
         }
         for token in enumerate(tokens):
             yield {
-                "id": "chat" + f"cmpl-{str(uuid.uuid4())}",
+                "id": f"chatcmpl-{str(uuid.uuid4())}",
                 "model": model_name,
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
@@ -149,7 +147,7 @@ class ChatglmCppChatModel(LLM):
         text: str, model_name: str
     ) -> ChatCompletion:
         return {
-            "id": "chat" + f"cmpl-{str(uuid.uuid4())}",
+            "id": f"chatcmpl-{str(uuid.uuid4())}",
             "model": model_name,
             "object": "chat.completion",
             "created": int(time.time()),

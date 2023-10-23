@@ -66,9 +66,10 @@ def test_ctransformer_init(model_spec, model_family):
     from ctransformers import AutoConfig
 
     quantization = "q4_0"
-    uid = "".join(random.choice(string.digits) for i in range(15))
+    uid = "".join(random.choice(string.digits) for _ in range(15))
     path = "".join(
-        random.choice(string.ascii_letters + string.punctuation) for i in range(100)
+        random.choice(string.ascii_letters + string.punctuation)
+        for _ in range(100)
     )
     model = CtransformersModel(
         model_uid=uid,

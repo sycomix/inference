@@ -26,21 +26,15 @@ from setuptools.command.develop import develop
 from setuptools.command.install import install
 from setuptools.command.sdist import sdist
 
-# From https://github.com/pandas-dev/pandas/pull/24274:
-# For mac, ensure extensions are built for macos 10.9 when compiling on a
-# 10.9 system or above, overriding distuitls behaviour which is to target
-# the version that python was built for. This may be overridden by setting
-# MACOSX_DEPLOYMENT_TARGET before calling setup.py
 if sys.platform == "darwin":
     if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
         current_system = platform.mac_ver()[0]
         python_target = get_config_vars().get(
             "MACOSX_DEPLOYMENT_TARGET", current_system
         )
-        target_macos_version = "10.9"
-
         parsed_python_target = parse_version(python_target)
         parsed_current_system = parse_version(current_system)
+        target_macos_version = "10.9"
         parsed_macos_version = parse_version(target_macos_version)
         if parsed_python_target <= parsed_macos_version <= parsed_current_system:
             os.environ["MACOSX_DEPLOYMENT_TARGET"] = target_macos_version

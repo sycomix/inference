@@ -101,72 +101,68 @@ class SupervisorActor(xo.Actor):
 
     @log_sync(logger=logger)
     def list_model_registrations(self, model_type: str) -> List[Dict[str, Any]]:
-        if model_type == "LLM":
-            from ..model.llm import BUILTIN_LLM_FAMILIES, get_user_defined_llm_families
-
-            ret = [
-                {"model_name": f.model_name, "is_builtin": True}
-                for f in BUILTIN_LLM_FAMILIES
-            ]
-            user_defined_llm_families = get_user_defined_llm_families()
-            ret.extend(
-                [
-                    {"model_name": f.model_name, "is_builtin": False}
-                    for f in user_defined_llm_families
-                ]
-            )
-
-            def sort_helper(item):
-                assert isinstance(item["model_name"], str)
-                return item.get("model_name").lower()
-
-            ret.sort(key=sort_helper)
-
-            return ret
-        else:
+        if model_type != "LLM":
             raise ValueError(f"Unsupported model type: {model_type}")
+        from ..model.llm import BUILTIN_LLM_FAMILIES, get_user_defined_llm_families
+
+        ret = [
+            {"model_name": f.model_name, "is_builtin": True}
+            for f in BUILTIN_LLM_FAMILIES
+        ]
+        user_defined_llm_families = get_user_defined_llm_families()
+        ret.extend(
+            [
+                {"model_name": f.model_name, "is_builtin": False}
+                for f in user_defined_llm_families
+            ]
+        )
+
+        def sort_helper(item):
+            assert isinstance(item["model_name"], str)
+            return item.get("model_name").lower()
+
+        ret.sort(key=sort_helper)
+
+        return ret
 
     @log_sync(logger=logger)
     def get_model_registration(
         self, model_type: str, model_name: str
     ) -> Dict[str, Any]:
-        if model_type == "LLM":
-            from ..model.llm import BUILTIN_LLM_FAMILIES, get_user_defined_llm_families
-
-            for f in BUILTIN_LLM_FAMILIES + get_user_defined_llm_families():
-                if f.model_name == model_name:
-                    return f
-
-            raise ValueError(f"Model {model_name} not found")
-        else:
+        if model_type != "LLM":
             raise ValueError(f"Unsupported model type: {model_type}")
+        from ..model.llm import BUILTIN_LLM_FAMILIES, get_user_defined_llm_families
+
+        for f in BUILTIN_LLM_FAMILIES + get_user_defined_llm_families():
+            if f.model_name == model_name:
+                return f
+
+        raise ValueError(f"Model {model_name} not found")
 
     @log_async(logger=logger)
     async def register_model(self, model_type: str, model: str, persist: bool):
-        if model_type == "LLM":
-            from ..model.llm import LLMFamilyV1, register_llm
-
-            llm_family = LLMFamilyV1.parse_raw(model)
-            register_llm(llm_family, persist)
-
-            if not self.is_local_deployment:
-                for worker in self._worker_address_to_worker.values():
-                    await worker.register_model(model_type, model, persist)
-        else:
+        if model_type != "LLM":
             raise ValueError(f"Unsupported model type: {model_type}")
+        from ..model.llm import LLMFamilyV1, register_llm
+
+        llm_family = LLMFamilyV1.parse_raw(model)
+        register_llm(llm_family, persist)
+
+        if not self.is_local_deployment:
+            for worker in self._worker_address_to_worker.values():
+                await worker.register_model(model_type, model, persist)
 
     @log_async(logger=logger)
     async def unregister_model(self, model_type: str, model_name: str):
-        if model_type == "LLM":
-            from ..model.llm import unregister_llm
-
-            unregister_llm(model_name)
-
-            if not self.is_local_deployment:
-                for worker in self._worker_address_to_worker.values():
-                    await worker.unregister_model(model_name)
-        else:
+        if model_type != "LLM":
             raise ValueError(f"Unsupported model type: {model_type}")
+        from ..model.llm import unregister_llm
+
+        unregister_llm(model_name)
+
+        if not self.is_local_deployment:
+            for worker in self._worker_address_to_worker.values():
+                await worker.unregister_model(model_name)
 
     async def launch_builtin_model(
         self,
@@ -181,10 +177,7 @@ class SupervisorActor(xo.Actor):
         **kwargs,
     ) -> AsyncGenerator:
         logger.debug(
-            (
-                f"Enter launch_builtin_model, model_uid: %s, model_name: %s, model_size: %s, "
-                f"model_format: %s, quantization: %s, replica: %s"
-            ),
+            'Enter launch_builtin_model, model_uid: %s, model_name: %s, model_size: %s, model_format: %s, quantization: %s, replica: %s',
             model_uid,
             model_name,
             str(model_size_in_billions) if model_size_in_billions else "",
@@ -236,13 +229,14 @@ class SupervisorActor(xo.Actor):
             dead_nodes = []
             for address, status in self._worker_status.items():
                 if time.time() - status.update_time > DEFAULT_NODE_TIMEOUT:
-                    dead_models = []
-                    for model_uid in self._replica_model_uid_to_worker:
+                    dead_models = [
+                        model_uid
+                        for model_uid in self._replica_model_uid_to_worker
                         if (
                             self._replica_model_uid_to_worker[model_uid].address
                             == address
-                        ):
-                            dead_models.append(model_uid)
+                        )
+                    ]
                     logger.error(
                         "Worker timeout. address: %s, influenced models: %s",
                         address,

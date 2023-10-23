@@ -59,7 +59,7 @@ def iter_replica_model_uid(model_uid: str, replica: int) -> Generator[str, None,
     """
     Generates all the replica model uids.
     """
-    replica = int(replica)
+    replica = replica
     for rep_id in range(replica):
         yield f"{model_uid}-{replica}-{rep_id}"
 

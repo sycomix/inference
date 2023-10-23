@@ -30,8 +30,7 @@ async def start_worker_components(
     address: str, supervisor_address: str, main_pool: MainActorPoolType
 ):
     cuda_device_indices = []
-    cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
-    if cuda_visible_devices:
+    if cuda_visible_devices := os.environ.get("CUDA_VISIBLE_DEVICES"):
         cuda_device_indices.extend([int(i) for i in cuda_visible_devices.split(",")])
     else:
         cuda_device_indices = list(range(cuda_count()))
@@ -44,7 +43,7 @@ async def start_worker_components(
         main_pool=main_pool,
         cuda_devices=cuda_device_indices,
     )
-    logger.info(f"Xinference worker successfully started.")
+    logger.info("Xinference worker successfully started.")
 
 
 async def _start_worker(

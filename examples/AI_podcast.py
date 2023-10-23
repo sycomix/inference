@@ -145,7 +145,7 @@ def record_unlimited() -> numpy.ndarray:
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        print(type(e).__name__ + ": " + str(e))
+        print(f"{type(e).__name__}: {str(e)}")
 
     try:
         y, _ = (

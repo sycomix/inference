@@ -70,9 +70,7 @@ class FalconPytorchModel(PytorchModel):
             return False
         if "falcon" not in llm_family.model_name:
             return False
-        if "generate" not in llm_family.model_ability:
-            return False
-        return True
+        return "generate" in llm_family.model_ability
 
 
 class FalconPytorchChatModel(PytorchChatModel):
@@ -127,6 +125,4 @@ class FalconPytorchChatModel(PytorchChatModel):
             return False
         if "falcon" not in llm_family.model_name:
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return True
+        return "chat" in llm_family.model_ability

@@ -31,27 +31,23 @@ async def start_supervisor_components(address: str, host: str, port: int):
     await xo.create_actor(SupervisorActor, address=address, uid=SupervisorActor.uid())
     # create a socket for RESTful API
     try:
-        sockets = []
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind((host, port))
-        sockets.append(sock)
+        sockets = [sock]
     except OSError:
-        # compare the reference to differentiate between the cases where the user specify the
-        # default port and the user does not specify the port.
-        if port is XINFERENCE_DEFAULT_ENDPOINT_PORT:
-            while True:
-                try:
-                    sockets = []
-                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    port = get_next_port()
-                    sock.bind((host, port))
-                    sockets.append(sock)
-                    break
-                except OSError:
-                    logger.warning("Failed to create socket with port %d", port)
-        else:
+        if port is not XINFERENCE_DEFAULT_ENDPOINT_PORT:
             raise
 
+        while True:
+            try:
+                sockets = []
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                port = get_next_port()
+                sock.bind((host, port))
+                sockets.append(sock)
+                break
+            except OSError:
+                logger.warning("Failed to create socket with port %d", port)
     internal_host = "localhost" if host == "0.0.0.0" else host
     restful_actor = await xo.create_actor(
         RESTfulAPIActor,

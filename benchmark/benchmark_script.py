@@ -149,28 +149,23 @@ def run_model(endpoint):
 
                     model = client.get_model(model_uid)
 
+                    list_speed = []
                     if "chat" in model_family.model_ability:
                         chat_history = []
                         prompt = "What't the top 10 largest animals in the world?"
 
-                        list_speed = []
                         for _ in range(NUM_ITER):
                             s = get_speed_for_chat_model(model, prompt, chat_history)
                             list_speed.append(s)
-                        logger.info(
-                            f"average speed: {sum(list_speed[1:]) / len(list_speed[1:])}"
-                        )
                     else:
                         prompt = "Once upon a time, there was a very old computer."
 
-                        list_speed = []
                         for _ in range(NUM_ITER):
                             s = get_speed_for_generate_model(model, prompt)
                             list_speed.append(s)
-                        logger.info(
-                            f"average speed: {sum(list_speed[1:]) / len(list_speed[1:])}"
-                        )
-
+                    logger.info(
+                        f"average speed: {sum(list_speed[1:]) / len(list_speed[1:])}"
+                    )
                     logger.info("\nAfter chat:")
                     gpu_mem_total, gpu_mem_used, gpu_mem_free = get_gpu_mem_info(
                         gpu_id=GPU_ID

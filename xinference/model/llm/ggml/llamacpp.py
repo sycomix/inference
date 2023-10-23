@@ -159,20 +159,15 @@ class LlamaCppModel(LLM):
         root_dir = os.path.dirname(os.path.dirname(model_path))
         gguf_dir = os.path.join(
             root_dir,
-            "{}-ggufv2-{}b".format(
-                self.model_family.model_name, self.model_spec.model_size_in_billions
-            ),
+            f"{self.model_family.model_name}-ggufv2-{self.model_spec.model_size_in_billions}b",
         )
         os.makedirs(gguf_dir, exist_ok=True)
         gguf_path = os.path.join(
-            gguf_dir,
-            "{}.{}.ggufv2".format(self.model_family.model_name, self.quantization),
+            gguf_dir, f"{self.model_family.model_name}.{self.quantization}.ggufv2"
         )
         # trick for validation, use a mark file to make sure the gguf file is converted
         mark_file = os.path.join(gguf_dir, "__valid")
-        if os.path.exists(mark_file):
-            return gguf_path
-        else:
+        if not os.path.exists(mark_file):
             logger.warning(
                 "You are using a model with ggmlv3, "
                 "and it will take some time to convert to ggufv2"
@@ -180,7 +175,7 @@ class LlamaCppModel(LLM):
             convert(model_path, gguf_path)
             with open(mark_file, "w") as f:
                 f.write(str(datetime.datetime.now()))
-            return gguf_path
+        return gguf_path
 
     def load(self):
         try:
@@ -237,23 +232,20 @@ class LlamaCppModel(LLM):
             or llm_family.model_name in CTRANSFORMERS_SUPPORTED_MODEL
         ):
             return False
-        if "generate" not in llm_family.model_ability:
-            return False
-        return True
+        return "generate" in llm_family.model_ability
 
     def generate(
         self, prompt: str, generate_config: Optional[LlamaCppGenerateConfig] = None
     ) -> Union[Completion, Iterator[CompletionChunk]]:
         def generator_wrapper(
-            _prompt: str,
-            repeat_penalty: float,
-            _generate_config: LlamaCppGenerateConfig,
-        ) -> Iterator[CompletionChunk]:
+                _prompt: str,
+                repeat_penalty: float,
+                _generate_config: LlamaCppGenerateConfig,
+            ) -> Iterator[CompletionChunk]:
             assert self._llm is not None
-            for _completion_chunk in self._llm(
+            yield from self._llm(
                 prompt=_prompt, repeat_penalty=repeat_penalty, **_generate_config
-            ):
-                yield _completion_chunk
+            )
 
         logger.debug(
             "Enter generate, prompt: %s, generate config: %s", prompt, generate_config
@@ -279,8 +271,7 @@ class LlamaCppModel(LLM):
 
     def create_embedding(self, input: Union[str, List[str]]) -> Embedding:
         assert self._llm is not None
-        embedding = self._llm.create_embedding(input)
-        return embedding
+        return self._llm.create_embedding(input)
 
 
 class LlamaCppChatModel(LlamaCppModel, ChatModelMixin):
@@ -313,9 +304,7 @@ class LlamaCppChatModel(LlamaCppModel, ChatModelMixin):
             or llm_family.model_name in CTRANSFORMERS_SUPPORTED_MODEL
         ):
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return True
+        return "chat" in llm_family.model_ability
 
     def _sanitize_generate_config(
         self, generate_config: Optional[LlamaCppGenerateConfig]
@@ -343,8 +332,7 @@ class LlamaCppChatModel(LlamaCppModel, ChatModelMixin):
 
         generate_config = self._sanitize_generate_config(generate_config)
 
-        stream = generate_config.get("stream", False)
-        if stream:
+        if stream := generate_config.get("stream", False):
             it = self.generate(full_prompt, generate_config)
             assert isinstance(it, Iterator)
             return self._to_chat_completion_chunks(it)

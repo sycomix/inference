@@ -88,16 +88,16 @@ class LLMInterface:
             return res
 
         def generate_wrapper(
-            message: str,
-            history: List[List[str]],
-            max_response_length: int,
-            temperature: float,
-        ) -> str:
+                message: str,
+                history: List[List[str]],
+                max_response_length: int,
+                temperature: float,
+            ) -> str:
             output = model.chat(
                 prompt=message,
                 chat_history=to_chat(flatten(history)),
                 generate_config={
-                    "max_tokens": int(max_response_length),
+                    "max_tokens": max_response_length,
                     "temperature": temperature,
                     "stream": False,
                 },

@@ -146,7 +146,7 @@ def cache(
         logger.info("Legacy cache path exists: %s", legacy_cache_path)
         return os.path.dirname(legacy_cache_path)
     elif download_from_self_hosted_storage() and is_self_hosted(llm_family, llm_spec):
-        logger.info(f"Caching from self-hosted storage")
+        logger.info("Caching from self-hosted storage")
         return cache_from_self_hosted_storage(llm_family, llm_spec, quantization)
     else:
         if llm_spec.model_uri is not None:
@@ -169,13 +169,12 @@ def parse_uri(uri: str) -> Tuple[str, str]:
 
     if os.path.exists(uri) or glob.glob(uri):
         return "file", uri
-    else:
-        parsed = urlparse(uri)
-        scheme = parsed.scheme
-        path = parsed.netloc + parsed.path
-        if parsed.scheme == "" or len(parsed.scheme) == 1:  # len == 1 for windows
-            scheme = "file"
-        return scheme, path
+    parsed = urlparse(uri)
+    scheme = parsed.scheme
+    path = parsed.netloc + parsed.path
+    if parsed.scheme == "" or len(parsed.scheme) == 1:  # len == 1 for windows
+        scheme = "file"
+    return scheme, path
 
 
 SUPPORTED_SCHEMES = ["s3"]
@@ -581,23 +580,22 @@ def match_llm(
                 continue
             if quantization:
                 return family, spec, matched_quantization
-            else:
-                # by default, choose the most coarse-grained quantization.
-                # TODO: too hacky.
-                quantizations = spec.quantizations
-                quantizations.sort()
-                for q in quantizations:
-                    if (
-                        is_local_deployment
-                        and not (_is_linux() and _has_cuda_device())
-                        and q == "4-bit"
-                    ):
-                        logger.warning(
-                            "Skipping %s for non-linux or non-cuda local deployment .",
-                            q,
-                        )
-                        continue
-                    return family, spec, q
+            # by default, choose the most coarse-grained quantization.
+            # TODO: too hacky.
+            quantizations = spec.quantizations
+            quantizations.sort()
+            for q in quantizations:
+                if (
+                    is_local_deployment
+                    and (not _is_linux() or not _has_cuda_device())
+                    and q == "4-bit"
+                ):
+                    logger.warning(
+                        "Skipping %s for non-linux or non-cuda local deployment .",
+                        q,
+                    )
+                    continue
+                return family, spec, q
     return None
 
 
@@ -630,39 +628,38 @@ def register_llm(llm_family: LLMFamilyV1, persist: bool):
 
 def unregister_llm(model_name: str):
     with UD_LLM_FAMILIES_LOCK:
-        llm_family = None
-        for i, f in enumerate(UD_LLM_FAMILIES):
-            if f.model_name == model_name:
-                llm_family = f
-                break
-        if llm_family:
-            UD_LLM_FAMILIES.remove(llm_family)
-
-            persist_path = os.path.join(
-                XINFERENCE_MODEL_DIR, "llm", f"{llm_family.model_name}.json"
+        if not (
+            llm_family := next(
+                (f for f in UD_LLM_FAMILIES if f.model_name == model_name),
+                None,
             )
-            if os.path.exists(persist_path):
-                os.remove(persist_path)
-
-            llm_spec = llm_family.model_specs[0]
-            cache_dir_name = (
-                f"{llm_family.model_name}-{llm_spec.model_format}"
-                f"-{llm_spec.model_size_in_billions}b"
-            )
-            cache_dir = os.path.join(XINFERENCE_CACHE_DIR, cache_dir_name)
-            if os.path.exists(cache_dir):
-                logger.warning(
-                    f"Remove the cache of user-defined model {llm_family.model_name}. "
-                    f"Cache directory: {cache_dir}"
-                )
-                if os.path.islink(cache_dir):
-                    os.remove(cache_dir)
-                else:
-                    logger.warning(
-                        f"Cache directory is not a soft link, please remove it manually."
-                    )
-        else:
+        ):
             raise ValueError(f"Model {model_name} not found")
+        UD_LLM_FAMILIES.remove(llm_family)
+
+        persist_path = os.path.join(
+            XINFERENCE_MODEL_DIR, "llm", f"{llm_family.model_name}.json"
+        )
+        if os.path.exists(persist_path):
+            os.remove(persist_path)
+
+        llm_spec = llm_family.model_specs[0]
+        cache_dir_name = (
+            f"{llm_family.model_name}-{llm_spec.model_format}"
+            f"-{llm_spec.model_size_in_billions}b"
+        )
+        cache_dir = os.path.join(XINFERENCE_CACHE_DIR, cache_dir_name)
+        if os.path.exists(cache_dir):
+            logger.warning(
+                f"Remove the cache of user-defined model {llm_family.model_name}. "
+                f"Cache directory: {cache_dir}"
+            )
+            if os.path.islink(cache_dir):
+                os.remove(cache_dir)
+            else:
+                logger.warning(
+                    "Cache directory is not a soft link, please remove it manually."
+                )
 
 
 def match_llm_cls(
@@ -671,7 +668,11 @@ def match_llm_cls(
     """
     Find an LLM implementation for given LLM family and spec.
     """
-    for cls in LLM_CLASSES:
-        if cls.match(family, llm_spec, quantization):
-            return cls
-    return None
+    return next(
+        (
+            cls
+            for cls in LLM_CLASSES
+            if cls.match(family, llm_spec, quantization)
+        ),
+        None,
+    )

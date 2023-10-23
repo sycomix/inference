@@ -302,18 +302,18 @@ def test_cache_from_uri_remote():
     fsspec.real_filesystem = fsspec.filesystem
 
     def fsspec_filesystem_side_effect(scheme: str, *args, **kwargs):
-        if scheme == "s3":
-            mock_fs = Mock()
-            mock_fs.info.return_value = {"size": 3}
-            mock_fs.walk.return_value = [("test_bucket", None, ["model.bin"])]
-            mock_file = MagicMock()
-            mock_file_descriptor = Mock()
-            mock_file_descriptor.read.side_effect = ["foo".encode(), None]
-            mock_file.__enter__.return_value = mock_file_descriptor
-            mock_fs.open.return_value = mock_file
-            return mock_fs
-        else:
+        if scheme != "s3":
             return fsspec.real_filesystem(scheme)
+
+        mock_fs = Mock()
+        mock_fs.info.return_value = {"size": 3}
+        mock_fs.walk.return_value = [("test_bucket", None, ["model.bin"])]
+        mock_file = MagicMock()
+        mock_file_descriptor = Mock()
+        mock_file_descriptor.read.side_effect = ["foo".encode(), None]
+        mock_file.__enter__.return_value = mock_file_descriptor
+        mock_fs.open.return_value = mock_file
+        return mock_fs
 
     with patch("fsspec.filesystem", side_effect=fsspec_filesystem_side_effect):
         cache_dir = cache_from_uri(family, spec)
@@ -352,18 +352,18 @@ def test_cache_from_uri_remote_exception_handling():
     fsspec.real_filesystem = fsspec.filesystem
 
     def fsspec_filesystem_side_effect(scheme: str, *args, **kwargs):
-        if scheme == "s3":
-            mock_fs = Mock()
-            mock_fs.info.return_value = {"size": 3}
-            mock_fs.walk.return_value = [("test_bucket", None, ["model.bin"])]
-            mock_file = MagicMock()
-            mock_file_descriptor = Mock()
-            mock_file_descriptor.read.side_effect = Exception("Mock exception")
-            mock_file.__enter__.return_value = mock_file_descriptor
-            mock_fs.open.return_value = mock_file
-            return mock_fs
-        else:
+        if scheme != "s3":
             return fsspec.real_filesystem(scheme)
+
+        mock_fs = Mock()
+        mock_fs.info.return_value = {"size": 3}
+        mock_fs.walk.return_value = [("test_bucket", None, ["model.bin"])]
+        mock_file = MagicMock()
+        mock_file_descriptor = Mock()
+        mock_file_descriptor.read.side_effect = Exception("Mock exception")
+        mock_file.__enter__.return_value = mock_file_descriptor
+        mock_fs.open.return_value = mock_file
+        return mock_fs
 
     with pytest.raises(
         RuntimeError,

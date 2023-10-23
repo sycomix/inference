@@ -164,24 +164,21 @@ class VLLMModel(LLM):
             return False
         if llm_family.model_name not in VLLM_SUPPORTED_MODELS:
             return False
-        if "generate" not in llm_family.model_ability:
-            return False
-        return VLLM_INSTALLED
+        return False if "generate" not in llm_family.model_ability else VLLM_INSTALLED
 
     @staticmethod
     def _convert_request_output_to_completion_chunk(
         request_id: str, model: str, request_output: "RequestOutput"
     ) -> CompletionChunk:
-        choices: List[CompletionChoice] = []
-        for output in request_output.outputs:
-            choices.append(
-                CompletionChoice(
-                    text=output.text,
-                    index=output.index,
-                    logprobs=None,  # TODO: support logprobs.
-                    finish_reason=output.finish_reason,
-                )
+        choices: List[CompletionChoice] = [
+            CompletionChoice(
+                text=output.text,
+                index=output.index,
+                logprobs=None,  # TODO: support logprobs.
+                finish_reason=output.finish_reason,
             )
+            for output in request_output.outputs
+        ]
         return CompletionChunk(
             id=request_id,
             object="text_completion",
@@ -194,17 +191,15 @@ class VLLMModel(LLM):
     def _convert_request_output_to_completion(
         request_id: str, model: str, request_output: "RequestOutput"
     ) -> Completion:
-        choices = []
-        for output in request_output.outputs:
-            choices.append(
-                CompletionChoice(
-                    text=output.text,
-                    index=output.index,
-                    logprobs=None,  # TODO: support logprobs.
-                    finish_reason=output.finish_reason,
-                )
+        choices = [
+            CompletionChoice(
+                text=output.text,
+                index=output.index,
+                logprobs=None,  # TODO: support logprobs.
+                finish_reason=output.finish_reason,
             )
-
+            for output in request_output.outputs
+        ]
         prompt_tokens = len(request_output.prompt_token_ids)
         completion_tokens = sum(
             len(output.token_ids) for output in request_output.outputs
@@ -267,15 +262,14 @@ class VLLMModel(LLM):
 
         if stream:
             return stream_results()
-        else:
-            final_output = None
-            async for request_output in results_generator:
-                final_output = request_output
+        final_output = None
+        async for request_output in results_generator:
+            final_output = request_output
 
-            assert final_output is not None
-            return self._convert_request_output_to_completion(
-                request_id, model=self.model_uid, request_output=final_output
-            )
+        assert final_output is not None
+        return self._convert_request_output_to_completion(
+            request_id, model=self.model_uid, request_output=final_output
+        )
 
 
 class VLLMChatModel(VLLMModel, ChatModelMixin):
@@ -289,9 +283,7 @@ class VLLMChatModel(VLLMModel, ChatModelMixin):
             return False
         if llm_family.model_name not in VLLM_SUPPORTED_CHAT_MODELS:
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return VLLM_INSTALLED
+        return False if "chat" not in llm_family.model_ability else VLLM_INSTALLED
 
     def _sanitize_chat_config(
         self,

@@ -196,7 +196,7 @@ class GGMLModel:
                 GGMLFType.MOSTLY_Q8_0,
             ):
                 err = "Q4 and Q8 quantizations changed in GGJTv3."
-        if len(err) > 0:
+        if err != "":
             raise ValueError(
                 f"{err} Sorry, your {self.file_format.name}v{self.format_version} file of type {ftype.name} is not eligible for conversion."
             )
@@ -245,19 +245,18 @@ class GGMLToGGUF:
         self.special_vocab = special_vocab
         if params_override is not None:
             n_kv_head = params_override.n_head_kv
+        elif cfg.gqa == 1:
+            n_kv_head = hp.n_head
         else:
-            if cfg.gqa == 1:
-                n_kv_head = hp.n_head
-            else:
-                gqa = float(cfg.gqa)
-                n_kv_head = None
-                for x in range(1, 256):
-                    if float(hp.n_head) / float(x) == gqa:
-                        n_kv_head = x
-                assert (
-                    n_kv_head is not None
-                ), "Couldn't determine n_kv_head from GQA param"
-                print(f"- Guessed n_kv_head = {n_kv_head} based on GQA {cfg.gqa}")
+            gqa = float(cfg.gqa)
+            n_kv_head = None
+            for x in range(1, 256):
+                if float(hp.n_head) / float(x) == gqa:
+                    n_kv_head = x
+            assert (
+                n_kv_head is not None
+            ), "Couldn't determine n_kv_head from GQA param"
+            print(f"- Guessed n_kv_head = {n_kv_head} based on GQA {cfg.gqa}")
         self.n_kv_head = n_kv_head
         self.name_map = gguf.get_tensor_name_map(
             gguf.MODEL_ARCH.LLAMA, ggml_model.hyperparameters.n_layer
@@ -332,7 +331,7 @@ class GGMLToGGUF:
         if self.vocab_override is not None:
             vo = self.vocab_override
             print("* Adding vocab item(s)")
-            for idx, (vbytes, score, ttype) in enumerate(vo.all_tokens()):
+            for vbytes, score, ttype in vo.all_tokens():
                 tokens.append(vbytes)
                 scores.append(score)
                 toktypes.append(ttype)
@@ -341,7 +340,7 @@ class GGMLToGGUF:
             ), f"Override vocab has a different number of items than hyperparameters - override = {len(tokens)} but n_vocab={hp.n_vocab}"
             gguf_writer.add_token_list(tokens)
             gguf_writer.add_token_scores(scores)
-            if len(toktypes) > 0:
+            if toktypes:
                 gguf_writer.add_token_types(toktypes)
             return
         print(f"* Adding {hp.n_vocab} vocab item(s)")

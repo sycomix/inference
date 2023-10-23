@@ -123,24 +123,20 @@ class WorkerActor(xo.Actor):
 
     @log_sync(logger=logger)
     async def register_model(self, model_type: str, model: str, persist: bool):
-        # TODO: centralized model registrations
-        if model_type == "LLM":
-            from ..model.llm import LLMFamilyV1, register_llm
-
-            llm_family = LLMFamilyV1.parse_raw(model)
-            register_llm(llm_family, persist)
-        else:
+        if model_type != "LLM":
             raise ValueError(f"Unsupported model type: {model_type}")
+        from ..model.llm import LLMFamilyV1, register_llm
+
+        llm_family = LLMFamilyV1.parse_raw(model)
+        register_llm(llm_family, persist)
 
     @log_sync(logger=logger)
     async def unregister_model(self, model_type: str, model_name: str):
-        # TODO: centralized model registrations
-        if model_type == "LLM":
-            from ..model.llm import unregister_llm
-
-            unregister_llm(model_name)
-        else:
+        if model_type != "LLM":
             raise ValueError(f"Unsupported model type: {model_type}")
+        from ..model.llm import unregister_llm
+
+        unregister_llm(model_name)
 
     @log_async(logger=logger)
     async def launch_builtin_model(
@@ -217,10 +213,7 @@ class WorkerActor(xo.Actor):
 
     @log_sync(logger=logger)
     def list_models(self) -> Dict[str, Dict[str, Any]]:
-        ret = {}
-        for k, v in self._model_uid_to_model_spec.items():
-            ret[k] = v.to_dict()
-        return ret
+        return {k: v.to_dict() for k, v in self._model_uid_to_model_spec.items()}
 
     @log_sync(logger=logger)
     def get_model(self, model_uid: str) -> xo.ActorRefType["ModelActor"]:

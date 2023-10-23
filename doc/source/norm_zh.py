@@ -43,10 +43,7 @@ def _zh_split(s):
     except ValueError:
         has_zh = True
 
-    if has_zh:
-        return list(jieba.cut(s))
-    else:
-        return pofile.WORD_SEP.split(s)
+    return list(jieba.cut(s)) if has_zh else pofile.WORD_SEP.split(s)
 
 
 # code modified from babel.messages.pofile (hash 359ecffca479dfe032d0f7210d5cd8160599c816)

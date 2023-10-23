@@ -95,16 +95,16 @@ class EmbeddingModel:
         # copied from sentence-transformers, and modify it to return tokens num
         @no_type_check
         def encode(
-            model: SentenceTransformer,
-            sentences: Union[str, List[str]],
-            batch_size: int = 32,
-            show_progress_bar: bool = None,
-            output_value: str = "sentence_embedding",
-            convert_to_numpy: bool = True,
-            convert_to_tensor: bool = False,
-            device: str = None,
-            normalize_embeddings: bool = False,
-        ):
+                model: SentenceTransformer,
+                sentences: Union[str, List[str]],
+                batch_size: int = 32,
+                show_progress_bar: bool = None,
+                output_value: str = "sentence_embedding",
+                convert_to_numpy: bool = True,
+                convert_to_tensor: bool = False,
+                device: str = None,
+                normalize_embeddings: bool = False,
+            ):
             """
             Computes sentence embeddings
 
@@ -126,10 +126,7 @@ class EmbeddingModel:
 
             model.eval()
             if show_progress_bar is None:
-                show_progress_bar = (
-                    logger.getEffectiveLevel() == logging.INFO
-                    or logger.getEffectiveLevel() == logging.DEBUG
-                )
+                show_progress_bar = logger.getEffectiveLevel() in [logging.INFO, logging.DEBUG]
 
             if convert_to_tensor:
                 convert_to_numpy = False
@@ -169,7 +166,7 @@ class EmbeddingModel:
                 ]
                 features = model.tokenize(sentences_batch)
                 features = batch_to_device(features, device)
-                all_token_nums += sum([len(f) for f in features])
+                all_token_nums += sum(len(f) for f in features)
 
                 with torch.no_grad():
                     out_features = model.forward(features)
@@ -185,7 +182,7 @@ class EmbeddingModel:
                             ):
                                 last_mask_id -= 1
 
-                            embeddings.append(token_emb[0 : last_mask_id + 1])
+                            embeddings.append(token_emb[:last_mask_id + 1])
                     elif output_value is None:  # Return all outputs
                         embeddings = []
                         for sent_idx in range(len(out_features["sentence_embedding"])):

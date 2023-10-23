@@ -60,6 +60,4 @@ class VicunaPytorchChatModel(PytorchChatModel):
             return False
         if "vicuna" not in llm_family.model_name:
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return True
+        return "chat" in llm_family.model_ability

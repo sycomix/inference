@@ -19,8 +19,8 @@ import os
 from .core import EmbeddingModelSpec
 
 _model_spec_json = os.path.join(os.path.dirname(__file__), "model_spec.json")
-BUILTIN_EMBEDDING_MODELS = dict(
-    (spec["model_name"], EmbeddingModelSpec(**spec))
+BUILTIN_EMBEDDING_MODELS = {
+    spec["model_name"]: EmbeddingModelSpec(**spec)
     for spec in json.load(codecs.open(_model_spec_json, "r", encoding="utf-8"))
-)
+}
 del _model_spec_json

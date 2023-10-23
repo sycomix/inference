@@ -132,9 +132,8 @@ class ModelActor(xo.StatelessActor):
     async def _call_wrapper(self, _wrapper: Callable):
         if self._lock is None:
             return await asyncio.to_thread(_wrapper)
-        else:
-            async with self._lock:
-                return await asyncio.to_thread(_wrapper)
+        async with self._lock:
+            return await asyncio.to_thread(_wrapper)
 
     async def _call_async_wrapper(self, _wrapper: Callable):
         return await asyncio.create_task(_wrapper())

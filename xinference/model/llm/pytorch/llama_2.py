@@ -54,9 +54,7 @@ class LlamaPytorchModel(PytorchModel):
             return False
         if "llama-2" not in llm_family.model_name:
             return False
-        if "generate" not in llm_family.model_ability:
-            return False
-        return True
+        return "generate" in llm_family.model_ability
 
 
 class LlamaPytorchChatModel(PytorchChatModel):
@@ -96,6 +94,4 @@ class LlamaPytorchChatModel(PytorchChatModel):
             return False
         if "llama-2" not in llm_family.model_name:
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return True
+        return "chat" in llm_family.model_ability

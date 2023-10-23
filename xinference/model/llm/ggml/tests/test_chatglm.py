@@ -31,8 +31,7 @@ class MockPipeline:
         return iter(res)
 
     def chat(self, *args, **kwargs) -> str:
-        res = "chatglm_test_chat"
-        return res
+        return "chatglm_test_chat"
 
 
 class MockChatglmCppChatModel(ChatglmCppChatModel):
@@ -92,9 +91,10 @@ mock_model_family = LLMFamilyV1.parse_raw(serialized)
 )
 def test_model_init(model_spec, model_family):
     quantization = "q2_k"
-    uid = "".join(random.choice(string.digits) for i in range(100))
+    uid = "".join(random.choice(string.digits) for _ in range(100))
     path = "".join(
-        random.choice(string.ascii_letters + string.punctuation) for i in range(100)
+        random.choice(string.ascii_letters + string.punctuation)
+        for _ in range(100)
     )
     model = MockChatglmCppChatModel(
         model_uid=uid,
@@ -153,9 +153,10 @@ def test_model_init(model_spec, model_family):
 )
 def test_model_chat(model_spec, model_family):
     quantization = "q2_k"
-    uid = "".join(random.choice(string.digits) for i in range(100))
+    uid = "".join(random.choice(string.digits) for _ in range(100))
     path = "".join(
-        random.choice(string.ascii_letters + string.punctuation) for i in range(100)
+        random.choice(string.ascii_letters + string.punctuation)
+        for _ in range(100)
     )
     model = MockChatglmCppChatModel(
         model_uid=uid,

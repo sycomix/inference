@@ -398,7 +398,7 @@ class RESTfulAPIActor(xo.Actor):
             key: value for key, value in payload.items() if key not in exclude_keys
         }
 
-        if model_uid is None or model_uid is None:
+        if model_uid is None:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid input. Please specify the model UID and the model name",
@@ -475,7 +475,7 @@ class RESTfulAPIActor(xo.Actor):
                 if not (
                     hasattr(route, "path")
                     and isinstance(route.path, str)
-                    and route.path == "/" + model_uid
+                    and route.path == f"/{model_uid}"
                 )
             ]
         except ValueError as ve:
@@ -563,8 +563,7 @@ class RESTfulAPIActor(xo.Actor):
             raise HTTPException(status_code=500, detail=str(e))
 
         try:
-            embedding = await model.create_embedding(request.input)
-            return embedding
+            return await model.create_embedding(request.input)
         except RuntimeError as re:
             logger.error(re, exc_info=True)
             raise HTTPException(status_code=400, detail=str(re))

@@ -150,9 +150,7 @@ class PytorchModel(LLM):
 
         if self._device == "cpu":
             kwargs = {"torch_dtype": torch.float32}
-        elif self._device == "cuda":
-            kwargs = {"torch_dtype": torch.float16}
-        elif self._device == "mps":
+        elif self._device in ["cuda", "mps"]:
             kwargs = {"torch_dtype": torch.float16}
         else:
             raise ValueError(f"Device {self._device} is not supported in temporary")
@@ -182,23 +180,22 @@ class PytorchModel(LLM):
                     raise ValueError(
                         f"Quantization {quantization} is not supported in temporary"
                     )
+            elif num_gpus != 1 and self._device == "cuda":
+                raise ValueError("Quantization is not supported for multi-gpu")
+            elif quantization != "8-bit":
+                raise ValueError(
+                    "Only 8-bit quantization is supported if it is not linux system or cuda device"
+                )
             else:
-                if num_gpus != 1 and self._device == "cuda":
-                    raise ValueError(f"Quantization is not supported for multi-gpu")
-                elif quantization != "8-bit":
-                    raise ValueError(
-                        f"Only 8-bit quantization is supported if it is not linux system or cuda device"
-                    )
-                else:
-                    self._model, self._tokenizer = load_compress_model(
-                        model_path=self.model_path,
-                        device=self._device,
-                        torch_dtype=kwargs["torch_dtype"],
-                        use_fast=self._use_fast_tokenizer,
-                        revision=kwargs["revision"],
-                    )
-                    logger.debug(f"Model Memory: {self._model.get_memory_footprint()}")
-                    return
+                self._model, self._tokenizer = load_compress_model(
+                    model_path=self.model_path,
+                    device=self._device,
+                    torch_dtype=kwargs["torch_dtype"],
+                    use_fast=self._use_fast_tokenizer,
+                    revision=kwargs["revision"],
+                )
+                logger.debug(f"Model Memory: {self._model.get_memory_footprint()}")
+                return
 
         if num_gpus > 0 and self._device == "cuda":
             kwargs.update({"device_map": "auto"})
@@ -229,9 +226,7 @@ class PytorchModel(LLM):
         elif device == "mps":
             if not torch.backends.mps.is_available():
                 raise ValueError("mps is unavailable in your environment")
-        elif device == "cpu":
-            pass
-        else:
+        elif device != "cpu":
             raise ValueError(f"Device {device} is not supported in temporary")
         return device
 
@@ -253,9 +248,7 @@ class PytorchModel(LLM):
             "llama-2-chat",
         ]:
             return False
-        if "generate" not in llm_family.model_ability:
-            return False
-        return True
+        return "generate" in llm_family.model_ability
 
     def generate(
         self, prompt: str, generate_config: Optional[PytorchGenerateConfig] = None
@@ -332,14 +325,9 @@ class PytorchModel(LLM):
                 "Could not import torch. Please install it with `pip install torch`."
             ) from e
 
-        if isinstance(input, str):
-            inputs = [input]
-        else:
-            inputs = input
-
+        inputs = [input] if isinstance(input, str) else input
         tokenizer = self._tokenizer
         is_llama = "llama" in str(type(self._model))  # llama supports batch inference
-        is_chatglm = "chatglm" in str(type(self._model))
         if is_llama:
             encoding = tokenizer.batch_encode_plus(
                 inputs, padding=True, return_tensors="pt"
@@ -367,7 +355,7 @@ class PytorchModel(LLM):
 
             usage = EmbeddingUsage(prompt_tokens=token_num, total_tokens=token_num)
 
-            ret = Embedding(
+            return Embedding(
                 object="list",
                 model=self.model_uid,
                 data=embedding_list,
@@ -377,13 +365,15 @@ class PytorchModel(LLM):
         else:
             embedding = []
             token_num = 0
+            is_chatglm = "chatglm" in str(type(self._model))
             for index, text in enumerate(inputs):
                 input_ids = tokenizer.encode(text, return_tensors="pt").to(self._device)
                 model_output = self._model(input_ids, output_hidden_states=True)
-                if is_chatglm:
-                    data = (model_output.hidden_states[-1].transpose(0, 1))[0]
-                else:
-                    data = model_output.hidden_states[-1][0]
+                data = (
+                    (model_output.hidden_states[-1].transpose(0, 1))[0]
+                    if is_chatglm
+                    else model_output.hidden_states[-1][0]
+                )
                 data = F.normalize(torch.mean(data, dim=0), p=2, dim=0)
                 data = data.tolist()
 
@@ -393,11 +383,9 @@ class PytorchModel(LLM):
                 token_num += len(input_ids[0])
 
             usage = EmbeddingUsage(prompt_tokens=token_num, total_tokens=token_num)
-            ret = Embedding(
+            return Embedding(
                 object="list", model=self.model_uid, data=embedding, usage=usage
             )
-
-        return ret
 
 
 class PytorchChatModel(PytorchModel, ChatModelMixin):
@@ -462,9 +450,7 @@ class PytorchChatModel(PytorchModel, ChatModelMixin):
             "llama-2-chat",
         ]:
             return False
-        if "chat" not in llm_family.model_ability:
-            return False
-        return True
+        return "chat" in llm_family.model_ability
 
     def chat(
         self,
@@ -482,8 +468,7 @@ class PytorchChatModel(PytorchModel, ChatModelMixin):
 
         generate_config = self._sanitize_generate_config(generate_config)
 
-        stream = generate_config.get("stream", False)
-        if stream:
+        if stream := generate_config.get("stream", False):
             it = self.generate(full_prompt, generate_config)
             assert isinstance(it, Iterator)
             return self._to_chat_completion_chunks(it)

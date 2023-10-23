@@ -202,8 +202,7 @@ def streaming_response_iterator(
     for line in response_lines:
         line = line.strip()
         if line.startswith(b"data:"):
-            data = json.loads(line.decode("utf-8").replace("data: ", "", 1))
-            yield data
+            yield json.loads(line.decode("utf-8").replace("data: ", "", 1))
 
 
 # Duplicate code due to type hint issues
@@ -228,8 +227,7 @@ def chat_streaming_response_iterator(
     for line in response_lines:
         line = line.strip()
         if line.startswith(b"data:"):
-            data = json.loads(line.decode("utf-8").replace("data: ", "", 1))
-            yield data
+            yield json.loads(line.decode("utf-8").replace("data: ", "", 1))
 
 
 class RESTfulModelHandle:
@@ -273,8 +271,7 @@ class RESTfulEmbeddingModelHandle(RESTfulModelHandle):
                 f"Failed to create the embeddings, detail: {response.json()['detail']}"
             )
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
 
 class RESTfulGenerateModelHandle(RESTfulEmbeddingModelHandle):
@@ -329,8 +326,7 @@ class RESTfulGenerateModelHandle(RESTfulEmbeddingModelHandle):
         if stream:
             return streaming_response_iterator(response.iter_lines())
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
 
 class RESTfulChatModelHandle(RESTfulGenerateModelHandle):
@@ -378,12 +374,11 @@ class RESTfulChatModelHandle(RESTfulGenerateModelHandle):
         if chat_history is None:
             chat_history = []
 
-        if chat_history and chat_history[0]["role"] == "system":
-            if system_prompt is not None:
+        if system_prompt is not None:
+            if chat_history and chat_history[0]["role"] == "system":
                 chat_history[0]["content"] = system_prompt
 
-        else:
-            if system_prompt is not None:
+            else:
                 chat_history.insert(0, {"role": "system", "content": system_prompt})
 
         chat_history.append({"role": "user", "content": prompt})
@@ -407,8 +402,7 @@ class RESTfulChatModelHandle(RESTfulGenerateModelHandle):
         if stream:
             return chat_streaming_response_iterator(response.iter_lines())
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
 
 class RESTfulChatglmCppChatModelHandle(RESTfulEmbeddingModelHandle):
@@ -471,8 +465,7 @@ class RESTfulChatglmCppChatModelHandle(RESTfulEmbeddingModelHandle):
         if stream:
             return chat_streaming_response_iterator(response.iter_lines())
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
 
 class Client:
@@ -743,8 +736,7 @@ class RESTfulClient:
                 f"Failed to list model, detail: {response.json()['detail']}"
             )
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
     def launch_model(
         self,
@@ -843,9 +835,8 @@ class RESTfulClient:
         url = f"{self.base_url}/v1/address"
         response = requests.get(url)
         if response.status_code != 200:
-            raise RuntimeError(f"Failed to get supervisor internal address")
-        response_data = response.json()
-        return response_data
+            raise RuntimeError("Failed to get supervisor internal address")
+        return response.json()
 
     def get_model(self, model_uid: str) -> RESTfulModelHandle:
         """
@@ -968,8 +959,7 @@ class RESTfulClient:
                 f"Failed to register model, detail: {response.json()['detail']}"
             )
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
     def unregister_model(self, model_type: str, model_name: str):
         """
@@ -994,8 +984,7 @@ class RESTfulClient:
                 f"Failed to register model, detail: {response.json()['detail']}"
             )
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
     def list_model_registrations(self, model_type: str) -> List[Dict[str, Any]]:
         """
@@ -1024,8 +1013,7 @@ class RESTfulClient:
                 f"Failed to list model registration, detail: {response.json()['detail']}"
             )
 
-        response_data = response.json()
-        return response_data
+        return response.json()
 
     def get_model_registration(
         self, model_type: str, model_name: str
@@ -1052,5 +1040,4 @@ class RESTfulClient:
                 f"Failed to list model registration, detail: {response.json()['detail']}"
             )
 
-        response_data = response.json()
-        return response_data
+        return response.json()

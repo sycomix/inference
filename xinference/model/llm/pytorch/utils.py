@@ -41,10 +41,10 @@ def is_sentence_complete(output: str):
 
 def is_partial_stop(output: str, stop_str: str):
     """Check whether the output contains a partial stop str."""
-    for i in range(0, min(len(output), len(stop_str))):
-        if stop_str.startswith(output[-i:]):
-            return True
-    return False
+    return any(
+        stop_str.startswith(output[-i:])
+        for i in range(0, min(len(output), len(stop_str)))
+    )
 
 
 def get_context_length(config):
@@ -151,7 +151,6 @@ def generate_stream(
             else:
                 out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
                 logits = out.logits
-            past_key_values = out.past_key_values
         else:
             if model.config.is_encoder_decoder:
                 out = model.decoder(
@@ -162,8 +161,6 @@ def generate_stream(
                     use_cache=True,
                     past_key_values=past_key_values if not sent_interrupt else None,
                 )
-                sent_interrupt = False
-
                 logits = model.lm_head(out[0])
             else:
                 out = model(
@@ -173,10 +170,10 @@ def generate_stream(
                     use_cache=True,
                     past_key_values=past_key_values if not sent_interrupt else None,
                 )
-                sent_interrupt = False
                 logits = out.logits
-            past_key_values = out.past_key_values
+            sent_interrupt = False
 
+        past_key_values = out.past_key_values
         if logits_processor:
             if repetition_penalty > 1.0:
                 tmp_output_ids = torch.as_tensor([output_ids], device=logits.device)
@@ -200,11 +197,7 @@ def generate_stream(
         token = tokens[0]
         output_ids.append(token)
 
-        if token in stop_token_ids:
-            stopped = True
-        else:
-            stopped = False
-
+        stopped = token in stop_token_ids
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             if echo:
                 tmp_output_ids = output_ids
@@ -378,21 +371,12 @@ def generate_stream_falcon(
     thread = Thread(target=model.generate, kwargs=generation_kwargs)
     thread.start()
 
-    if echo:
-        # means keep the prompt
-        output = prompt
-    else:
-        output = ""
-
+    output = prompt if echo else ""
     last_output_length = 0
     for i, new_text in enumerate(streamer):
         output += new_text
         if i % stream_interval == 0:
-            if echo:
-                rfind_start = len_prompt
-            else:
-                rfind_start = 0
-
+            rfind_start = len_prompt if echo else 0
             partially_stopped = False
             if stop_str:
                 if isinstance(stop_str, str):
@@ -521,7 +505,7 @@ def generate_stream_chatglm(
 
     gen_kwargs = {
         "max_length": max_new_tokens + input_echo_len,
-        "do_sample": True if temperature > 1e-5 else False,
+        "do_sample": temperature > 1e-5,
         "top_p": top_p,
         "repetition_penalty": repetition_penalty,
         "logits_processor": [invalid_score_processor],
@@ -534,10 +518,7 @@ def generate_stream_chatglm(
     for total_ids in model.stream_generate(**inputs, **gen_kwargs):
         total_ids = total_ids.tolist()[0]
         total_len = len(total_ids)
-        if echo:
-            output_ids = total_ids
-        else:
-            output_ids = total_ids[input_echo_len:]
+        output_ids = total_ids if echo else total_ids[input_echo_len:]
         response = tokenizer.decode(output_ids)
         response = process_response(response)
 

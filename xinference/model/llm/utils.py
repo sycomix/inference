@@ -48,19 +48,17 @@ class ChatModelMixin:
             ret = prompt_style.system_prompt + prompt_style.intra_message_sep
             for message in chat_history:
                 role = message["role"]
-                content = message["content"]
-                if content:
-                    ret += role + ": " + content + prompt_style.intra_message_sep
+                if content := message["content"]:
+                    ret += f"{role}: {content}{prompt_style.intra_message_sep}"
                 else:
-                    ret += role + ":"
+                    ret += f"{role}:"
             return ret
         elif prompt_style.style_name == "ADD_COLON_TWO":
             seps = [prompt_style.intra_message_sep, prompt_style.inter_message_sep]
             ret = prompt_style.system_prompt + seps[0]
             for i, message in enumerate(chat_history):
                 role = message["role"]
-                content = message["content"]
-                if content:
+                if content := message["content"]:
                     ret += role + ": " + content + seps[i % 2]
                 else:
                     ret += role + ":"
@@ -70,8 +68,7 @@ class ChatModelMixin:
             ret = prompt_style.system_prompt
             for i, message in enumerate(chat_history):
                 role = message["role"]
-                content = message["content"]
-                if content:
+                if content := message["content"]:
                     ret += role + content + seps[i % 2]
                 else:
                     ret += role
@@ -81,8 +78,7 @@ class ChatModelMixin:
             ret = ""
             for i, message in enumerate(chat_history):
                 role = message["role"]
-                content = message["content"]
-                if content:
+                if content := message["content"]:
                     if i == 0:
                         ret += prompt_style.system_prompt + content
                     else:
@@ -94,8 +90,7 @@ class ChatModelMixin:
             ret = prompt_style.system_prompt
             for message in chat_history:
                 role = message["role"]
-                content = message["content"]
-                if content:
+                if content := message["content"]:
                     ret += (
                         role
                         + ": "
@@ -141,9 +136,7 @@ class ChatModelMixin:
             )
             for message in chat_history:
                 role = message["role"]
-                content = message["content"]
-
-                if content:
+                if content := message["content"]:
                     ret += role + "\n" + content + prompt_style.intra_message_sep + "\n"
                 else:
                     ret += role + "\n"
@@ -168,8 +161,7 @@ class ChatModelMixin:
             ret = prompt_style.system_prompt + prompt_style.intra_message_sep
             for message in chat_history:
                 role = message["role"]
-                content = message["content"]
-                if content:
+                if content := message["content"]:
                     ret += role + ": " + content + prompt_style.intra_message_sep
                 else:
                     ret += role + ": Let's think step by step."

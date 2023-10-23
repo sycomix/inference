@@ -155,7 +155,7 @@ def record_unlimited() -> numpy.ndarray:
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        print(type(e).__name__ + ": " + str(e))
+        print(f"{type(e).__name__}: {str(e)}")
 
     try:
         y, _ = (
@@ -174,11 +174,7 @@ def record_unlimited() -> numpy.ndarray:
 
 # Launch model while sent the greeting message to the user.
 def lanuch_model(alice_or_bob, model_a, username, model_uid, system_prompt):
-    if alice_or_bob == "小红":
-        emoji_assistant = emoji_women
-    else:
-        emoji_assistant = emoji_man
-
+    emoji_assistant = emoji_women if alice_or_bob == "小红" else emoji_man
     print("")
     print(emoji_assistant, end="")
     print(":", end="")
@@ -249,10 +245,7 @@ def construct_Baichuan_prompt(
     for i, message in enumerate(chat_history):
         role = message["role"]
         content = message["content"]
-        if i % 2 == 0:
-            ret += f" {role} {content}{sep}"
-        else:
-            ret += f" {role} {content}{sep2}"
+        ret += f" {role} {content}{sep}" if i % 2 == 0 else f" {role} {content}{sep2}"
     ret += f" {username} {prompt}{sep}"
     ret += f" {assistant_name} "
     return ret
@@ -336,11 +329,7 @@ def chat_with_bot(
     print(content)
 
     chat_history.append(ChatCompletionMessage(role="user", content=format_input))
-    if alice_or_bob_state == "小红":
-        chat_history.append(ChatCompletionMessage(role="assistant", content=content))
-    else:
-        chat_history.append(ChatCompletionMessage(role="assistant", content=content))
-
+    chat_history.append(ChatCompletionMessage(role="assistant", content=content))
     return content
 
 

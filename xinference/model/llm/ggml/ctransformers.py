@@ -116,9 +116,8 @@ class CtransformersModel(LLM):
             )
 
             installation_guide = [
-                f"Please make sure 'ctransformers' is installed.",
-                f"You can install it by checking out the repository for command:"
-                f"https://github.com/marella/ctransformers",
+                "Please make sure 'ctransformers' is installed.",
+                'You can install it by checking out the repository for command:https://github.com/marella/ctransformers',
             ]
 
             raise ImportError(f"{error_message}\n\n{''.join(installation_guide)}")
@@ -165,9 +164,8 @@ class CtransformersModel(LLM):
             error_message = "Failed to import module 'ctransformers'"
 
             installation_guide = [
-                f"Please make sure 'ctransformers' is installed.",
-                f"You can install it by checking out the repository for command."
-                f"https://github.com/marella/ctransformers",
+                "Please make sure 'ctransformers' is installed.",
+                'You can install it by checking out the repository for command.https://github.com/marella/ctransformers',
             ]
 
             raise ImportError(f"{error_message}\n\n{''.join(installation_guide)}")
@@ -194,9 +192,7 @@ class CtransformersModel(LLM):
             return False
         if llm_family.model_name not in CTRANSFORMERS_SUPPORTED_MODEL:
             return False
-        if "generate" not in llm_family.model_ability:
-            return False
-        return True
+        return "generate" in llm_family.model_ability
 
     def _determine_model_type(self):
         if self._model_family.model_name not in MODEL_TYPE_FOR_CTRANSFORMERS:
@@ -238,35 +234,34 @@ class CtransformersModel(LLM):
                 _max_new_tokens=max_new_tokens,
                 _generate_config=generate_config,
             )
-        else:
-            assert self.model_uid is not None
-            completion_chunk = None
-            completion_usage = None
-            for completion_chunk, completion_usage in generate_stream(
-                model=self.model_uid,
-                model_ref=self._llm,
-                prompt=prompt,
-                max_new_tokens=max_new_tokens,
-                **generate_config,
-            ):
-                pass
+        assert self.model_uid is not None
+        completion_chunk = None
+        completion_usage = None
+        for completion_chunk, completion_usage in generate_stream(
+            model=self.model_uid,
+            model_ref=self._llm,
+            prompt=prompt,
+            max_new_tokens=max_new_tokens,
+            **generate_config,
+        ):
+            pass
 
-            assert completion_chunk is not None
-            assert completion_usage is not None
+        assert completion_chunk is not None
+        assert completion_usage is not None
 
-            completion = Completion(
-                id=completion_chunk["id"],
-                object=completion_chunk["object"],
-                created=completion_chunk["created"],
-                model=completion_chunk["model"],
-                choices=completion_chunk["choices"],
-                usage=completion_usage,
-            )
+        completion = Completion(
+            id=completion_chunk["id"],
+            object=completion_chunk["object"],
+            created=completion_chunk["created"],
+            model=completion_chunk["model"],
+            choices=completion_chunk["choices"],
+            usage=completion_usage,
+        )
 
-            logger.debug(
-                "Generated, completion: %s, generate config: %s",
-                completion,
-                generate_config,
-            )
+        logger.debug(
+            "Generated, completion: %s, generate config: %s",
+            completion,
+            generate_config,
+        )
 
-            return completion
+        return completion

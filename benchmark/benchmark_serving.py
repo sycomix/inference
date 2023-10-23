@@ -70,22 +70,20 @@ def get_tokenizer(
         )
         raise RuntimeError(err_msg) from e
     except ValueError as e:
-        # If the error pertains to the tokenizer class not existing or not
-        # currently being imported, suggest using the --trust-remote-code flag.
-        if not trust_remote_code and (
-            "does not exist or is not currently imported." in str(e)
-            or "requires you to execute the tokenizer file" in str(e)
+        if (
+            trust_remote_code
+            or "does not exist or is not currently imported." not in str(e)
+            and "requires you to execute the tokenizer file" not in str(e)
         ):
-            err_msg = (
-                "Failed to load the tokenizer. If the tokenizer is a custom "
-                "tokenizer not yet available in the HuggingFace transformers "
-                "library, consider setting `trust_remote_code=True` in LLM "
-                "or using the `--trust-remote-code` flag in the CLI."
-            )
-            raise RuntimeError(err_msg) from e
-        else:
             raise e
 
+        err_msg = (
+            "Failed to load the tokenizer. If the tokenizer is a custom "
+            "tokenizer not yet available in the HuggingFace transformers "
+            "library, consider setting `trust_remote_code=True` in LLM "
+            "or using the `--trust-remote-code` flag in the CLI."
+        )
+        raise RuntimeError(err_msg) from e
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
         logger.warning(
             "Using a slow tokenizer. This might cause a significant "
@@ -134,9 +132,7 @@ def sample_requests(
             continue
         filtered_dataset.append((prompt, prompt_len, output_len))
 
-    # Sample the requests.
-    sampled_requests = random.sample(filtered_dataset, num_requests)
-    return sampled_requests
+    return random.sample(filtered_dataset, num_requests)
 
 
 async def get_request(

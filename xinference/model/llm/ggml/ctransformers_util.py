@@ -93,8 +93,7 @@ def generate_stream(
         # Check if one of the stop sequences is part of the text.
         # Note that the stop sequence may not always be at the end of text.
         if stop:
-            match = stop_regex.search(text)
-            if match:
+            if match := stop_regex.search(text):
                 text = text[: match.start()]
                 finish_reason = "stop"
                 break

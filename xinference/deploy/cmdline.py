@@ -75,11 +75,10 @@ format=%(asctime)s %(name)-12s %(process)d %(levelname)-8s %(message)s
 def get_endpoint(endpoint: Optional[str]) -> str:
     # user didn't specify the endpoint.
     if endpoint is None:
-        if XINFERENCE_ENV_ENDPOINT in os.environ:
-            return os.environ[XINFERENCE_ENV_ENDPOINT]
-        else:
-            default_endpoint = f"http://{XINFERENCE_DEFAULT_LOCAL_HOST}:{XINFERENCE_DEFAULT_ENDPOINT_PORT}"
-            return default_endpoint
+        return os.environ.get(
+            XINFERENCE_ENV_ENDPOINT,
+            f"http://{XINFERENCE_DEFAULT_LOCAL_HOST}:{XINFERENCE_DEFAULT_ENDPOINT_PORT}",
+        )
     else:
         return endpoint
 
@@ -655,9 +654,8 @@ def model_chat(
                     delta = chunk["choices"][0]["delta"]
                     if "content" not in delta:
                         continue
-                    else:
-                        response_content += delta["content"]
-                        print(delta["content"], end="", flush=True, file=sys.stdout)
+                    response_content += delta["content"]
+                    print(delta["content"], end="", flush=True, file=sys.stdout)
                 print("", file=sys.stdout)
                 chat_history.append(ChatCompletionMessage(role="user", content=prompt))
                 chat_history.append(
